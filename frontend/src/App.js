@@ -10,19 +10,39 @@ import Orders from './pages/Orders';
 import Admin from './pages/Admin';
 
 function App() {
-    // Load cart from localStorage
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
+
+  const [user, setUser] = useState(null);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
+  // Auto logout using sessionStorage
+  useEffect(() => {
+    const isSession = sessionStorage.getItem('activeSession');
+
+    if (!isSession) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('cart');
+      setUser(null);
+      setCart([]);
+    } else {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    }
+
+    sessionStorage.setItem('activeSession', 'true');
+  }, []);
+
   const addToCart = (record) => {
-    // Check if user is logged in first
     if (!user) {
       alert('Please login first to add items to cart!');
       window.location.href = '/login';
@@ -38,14 +58,14 @@ function App() {
     alert(record.title + ' added to cart!');
   };
 
-const handleLogout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('cart');
-  setCart([]);
-  setUser(null);
-  window.location.href = '/';
-};
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('cart');
+    setCart([]);
+    setUser(null);
+    window.location.href = '/';
+  };
 
   return (
     <BrowserRouter>
@@ -64,16 +84,16 @@ const handleLogout = () => {
           </Link>
 
           {/* Show Cart and Orders only if logged in and NOT admin */}
-            {user && user.role !== 'admin' && (
-              <>
+          {user && user.role !== 'admin' && (
+            <>
               <Link to="/cart" className="text-white hover:text-blue-300 font-medium">
-              🛒 Cart ({cart.length})
+                🛒 Cart ({cart.length})
               </Link>
               <Link to="/orders" className="text-white hover:text-blue-300 font-medium">
-              Orders
+                Orders
               </Link>
-              </>
-              )}
+            </>
+          )}
 
           {/* Show Admin link only if user is admin */}
           {user && user.role === 'admin' && (
@@ -117,7 +137,7 @@ const handleLogout = () => {
         <Route path="/records" element={<Records addToCart={addToCart} />} />
         <Route path="/cart" element={<Cart cart={cart} setCart={setCart} />} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>

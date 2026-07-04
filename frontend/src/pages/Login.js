@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function Login() {
+function Login({ setUser }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,26 @@ function Login() {
       if (response.data.user.role === 'admin') {
         window.location.href = '/admin';
       } else {
-        window.location.href = '/records';
+        try {
+  const response = await axios.post('http://localhost:5000/auth/login', {
+    email,
+    password,
+  });
+
+  localStorage.setItem('token', response.data.token);
+  localStorage.setItem('user', JSON.stringify(response.data.user));
+  setUser(response.data.user);
+
+  if (response.data.user.role === 'admin') {
+    window.location.href = '/admin';
+  } else {
+    window.location.href = '/records';
+  }
+
+} catch (error) {
+  alert(error.response.data.message);
+  setLoading(false);
+}
       }
 
     } catch (error) {
